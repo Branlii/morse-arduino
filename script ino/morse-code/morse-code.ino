@@ -7,6 +7,7 @@
 WebSocketsClient webSocket;
 
 const int buttonPin = 18;
+const int ledPin = 13; // Changed to pin 13 - safer for ESP32, doesn't conflict with WiFi
 rgb_lcd lcd;
 
 unsigned long pressStartTime = 0;
@@ -22,9 +23,6 @@ int maxLetter = 64;
 // Array to store morse code segments
 String morseSending[64] = {};
 int morseCount = 0;
-
-const char* ssid = "ESP32-Morse";
-const char* password = "12345678";
 
 String receivedMessage = ""; // To store the message from the server
 unsigned long scrollTime = 0; // For tracking scroll timing
@@ -98,6 +96,15 @@ void setup() {
 
   Serial.println("Booting...");
 
+  // Initialize the LED
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW); // Start with LED off
+  
+  // Test LED blink to verify it works
+  digitalWrite(ledPin, HIGH);
+  delay(500);
+  digitalWrite(ledPin, LOW);
+
   // Initialize the LCD
   lcd.begin(16, 2); // Assuming 16x2 LCD - adjust if different
   lcd.setRGB(255, 255, 255); // Set backlight to white
@@ -151,6 +158,7 @@ void loop() {
   if (buttonState == 1 && buttonPressed == false) {
     pressStartTime = millis();
     buttonPressed = true;
+    digitalWrite(ledPin, LOW); // Turn off LED when user starts pressing
     Serial.println(pressStartTime);
   }
 
@@ -184,6 +192,7 @@ void loop() {
     }
     morseInput = "";
     lastInputTime = millis(); // Reset timer to avoid triggering the 5-second condition immediately
+    digitalWrite(ledPin, HIGH); // Turn on LED - user can tap new letter
   }
 
   // Check for 5 seconds pause and send through socket
