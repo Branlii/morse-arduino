@@ -26,12 +26,33 @@ int morseCount = 0;
 const char* ssid = "ESP32-Morse";
 const char* password = "12345678";
 
+String receivedMessage = ""; // To store the message from the server
+unsigned long scrollTime = 0; // For tracking scroll timing
+int scrollPosition = 0; // Current scroll position
+
 void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
   if (type == WStype_TEXT) {
     String reply = String((char*)payload);
     // reply is the translated text from server
     Serial.println("Server says: " + reply);
-    // you could also re-encode to morse here
+    
+    // Save the received message and reset scroll position
+    receivedMessage = reply;
+    scrollPosition = 0;
+    scrollTime = millis();
+    
+    // Display the message on the LCD's second line
+    lcd.setCursor(0, 1);
+    lcd.print("                "); // Clear the second line
+    lcd.setCursor(0, 1);
+    
+    // If the message is shorter than or equal to 16 characters, just display it
+    if (receivedMessage.length() <= 16) {
+      lcd.print(receivedMessage);
+    } else {
+      // Display the first 16 characters of the message
+      lcd.print(receivedMessage.substring(0, 16));
+    }
   }
 }
 
@@ -77,6 +98,11 @@ void setup() {
 
   Serial.println("Booting...");
 
+  // Initialize the LCD
+  lcd.begin(16, 2); // Assuming 16x2 LCD - adjust if different
+  lcd.setRGB(255, 255, 255); // Set backlight to white
+  lcd.print("Incoming message");
+  
   delay(100);  // Small delay for stability
 
   setupWiFi();
@@ -84,6 +110,40 @@ void setup() {
 
 void loop() {
   webSocket.loop();
+
+  // Handle scrolling text if the message is longer than 16 characters
+  if (receivedMessage.length() > 16) {
+    // Scroll every 500 milliseconds
+    if (millis() - scrollTime > 500) {
+      scrollTime = millis();
+      scrollPosition++;
+      
+      // Reset scroll position when we've scrolled through the entire message
+      if (scrollPosition > receivedMessage.length()) {
+        scrollPosition = 0;
+      }
+      
+      // Update the display with the scrolled text
+      lcd.setCursor(0, 1);
+      lcd.print("                "); // Clear the line
+      lcd.setCursor(0, 1);
+      
+      // Calculate the end position for substring
+      int endPosition = scrollPosition + 16;
+      if (endPosition > receivedMessage.length()) {
+        // If we're near the end, show what we can and wrap around
+        String displayText = receivedMessage.substring(scrollPosition);
+        // Pad with spaces if needed
+        while (displayText.length() < 16) {
+          displayText += " ";
+        }
+        lcd.print(displayText);
+      } else {
+        // Normal case - show 16 characters from the current position
+        lcd.print(receivedMessage.substring(scrollPosition, endPosition));
+      }
+    }
+  }
 
   bool buttonState = digitalRead(buttonPin);
 
