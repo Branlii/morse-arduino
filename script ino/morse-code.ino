@@ -17,8 +17,10 @@ bool buttonPressed = false;
 
 String morseInput = "";
 
+int maxLetter = 64;
+
 // Array to store morse code segments
-String morseSending[32] = {};
+String morseSending[64] = {};
 int morseCount = 0;
 
 const char* ssid = "ESP32-Morse";
@@ -70,7 +72,7 @@ void setupWiFi() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   delay(1000);
 
   Serial.println("Booting...");
@@ -99,7 +101,7 @@ void loop() {
     buttonPressed = false;
 
     // Determine if it's a dot or dash
-    if (pressDuration < 500) {
+    if (pressDuration < 300) {
       morseInput += ".";
       Serial.println("Detected: DOT");
     } else {
@@ -113,8 +115,8 @@ void loop() {
   }
 
   // Check for 2 seconds pause
-  if (morseInput.length() > 0 && (millis() - lastInputTime > 2000)) {
-    if (morseCount < 10) { // Ensure we don't exceed array bounds
+  if (morseInput.length() > 0 && (millis() - lastInputTime > 700)) {
+    if (morseCount < maxLetter) { // Ensure we don't exceed array bounds
       morseSending[morseCount] = morseInput;
       morseCount++;
       Serial.print("Added to array: ");

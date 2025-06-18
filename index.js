@@ -39,7 +39,7 @@ function morseToText(morseArr) {
 const clients = [];
 
 wss.on("connection", (ws) => {
-  if (clients.length < 2) {
+  if (clients.length < 10) {
     clients.push(ws);
     console.log("Client connected. Total:", clients.length);
   } else {
