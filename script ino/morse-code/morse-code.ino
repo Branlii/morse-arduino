@@ -8,6 +8,7 @@ WebSocketsClient webSocket;
 
 const int buttonPin = 18;
 const int ledPin = 13; // Changed to pin 13 - safer for ESP32, doesn't conflict with WiFi
+const int buzzerPin = 5; // Grove buzzer v1.2 SIG pin
 rgb_lcd lcd;
 
 unsigned long pressStartTime = 0;
@@ -27,6 +28,11 @@ int morseCount = 0;
 String receivedMessage = ""; // To store the message from the server
 unsigned long scrollTime = 0; // For tracking scroll timing
 int scrollPosition = 0; // Current scroll position
+
+// Ultrasonic sensor variables
+bool buzzerActive = false;
+unsigned long buzzerStartTime = 0;
+const unsigned long buzzerDuration = 100; // Sound duration in ms
 
 void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
   if (type == WStype_TEXT) {
@@ -112,6 +118,10 @@ void setup() {
   
   delay(100);  // Small delay for stability
 
+  // Initialize buzzer
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, LOW);
+
   setupWiFi();
 }
 
@@ -159,6 +169,12 @@ void loop() {
     pressStartTime = millis();
     buttonPressed = true;
     digitalWrite(ledPin, LOW); // Turn off LED when user starts pressing
+    
+    // Trigger buzzer sound
+    digitalWrite(buzzerPin, HIGH);
+    buzzerActive = true;
+    buzzerStartTime = millis();
+    
     Serial.println(pressStartTime);
   }
 
@@ -167,6 +183,9 @@ void loop() {
     unsigned long currentTime = millis();
     unsigned long pressDuration = currentTime - pressStartTime;
     buttonPressed = false;
+    
+    // Turn off buzzer when button is released
+    digitalWrite(buzzerPin, LOW);
 
     // Determine if it's a dot or dash
     if (pressDuration < 300) {
